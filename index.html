@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="E-Pricing — Real-time dynamic pricing platform for e-commerce businesses">
+    <title>E-Pricing — Login</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+</head>
+<body>
+    <!-- ═══ Login Page — Split Screen Layout ═══ -->
+    <div class="login-container">
+
+        <!-- Left Side — Branding & Illustration -->
+        <div class="login-branding">
+            <div class="brand-content">
+                <div class="brand-logo">⚡ E-<span>Pricing</span></div>
+                <p class="brand-tagline">
+                    Smart pricing that watches the market so you don't have to. 
+                    Stay competitive, protect margins, grow profits — automatically.
+                </p>
+                <!-- Floating info cards -->
+                <div class="floating-cards">
+                    <div class="float-card">
+                        <div class="fc-icon">📊</div>
+                        <div class="fc-value">156</div>
+                        <div class="fc-label">Products Tracked</div>
+                    </div>
+                    <div class="float-card">
+                        <div class="fc-icon">🔥</div>
+                        <div class="fc-value">23</div>
+                        <div class="fc-label">Changes Today</div>
+                    </div>
+                    <div class="float-card">
+                        <div class="fc-icon">🛡️</div>
+                        <div class="fc-value">22.4%</div>
+                        <div class="fc-label">Avg Margin</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side — Login Form -->
+        <div class="login-form-side">
+            <div class="login-form-wrapper">
+                <h1 class="welcome-text">Welcome back! 👋</h1>
+                <p class="welcome-sub">Sign in to your pricing dashboard to manage your products and rules.</p>
+
+                <form id="loginForm" onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" class="form-input" placeholder="you@epricing.com" value="chaitanya@epricing.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" class="form-input" placeholder="Enter your password" value="admin123" required>
+                    </div>
+                    <div class="form-row">
+                        <label><input type="checkbox" checked> Remember me</label>
+                        <a href="#">Forgot password?</a>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-lg btn-full" id="loginBtn">
+                        Sign In →
+                    </button>
+                </form>
+
+                <p style="text-align:center; margin-top:1.5rem; font-size:0.82rem; color:var(--text-muted);">
+                    Demo credentials are pre-filled. Just click Sign In!
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ─── Login Handler ───────────────────────────────────
+        // In a real app, this would call an API like POST /auth/login
+        // For demo, we validate against hardcoded credentials
+        function handleLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const btn = document.getElementById('loginBtn');
+
+            // Show loading state
+            btn.textContent = 'Signing in...';
+            btn.disabled = true;
+
+            // Simulate API call delay (500ms)
+            setTimeout(function() {
+                if (email === 'chaitanya@epricing.com' && password === 'admin123') {
+                    // Store login session in browser storage
+                    localStorage.setItem('epricing_user', JSON.stringify({
+                        name: 'Chaitanya Vaibhav',
+                        email: email,
+                        role: 'Admin',
+                        avatar: 'CV'
+                    }));
+                    // Redirect to dashboard
+                    window.location.href = 'app.html';
+                } else {
+                    alert('Invalid credentials! Use the pre-filled demo credentials.');
+                    btn.textContent = 'Sign In →';
+                    btn.disabled = false;
+                }
+            }, 500);
+        }
+
+        // If already logged in, skip to dashboard
+        if (localStorage.getItem('epricing_user')) {
+            window.location.href = 'app.html';
+        }
+    </script>
+</body>
+</html>

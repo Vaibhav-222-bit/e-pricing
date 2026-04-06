@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Pricing — Smart Price Comparison Engine</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="app-layout">
+
+        <!-- ═══ SIDEBAR ═══ -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">⚡ E-<span>Pricing</span></div>
+                <span class="sidebar-badge">Pro</span>
+            </div>
+            <div class="sidebar-nav">
+                <div class="nav-section-title">Main</div>
+                <div class="nav-item active" data-page="search" onclick="navigateTo('search')">
+                    <span class="nav-icon">🔍</span> Search & Compare
+                </div>
+                <div class="nav-item" data-page="dashboard" onclick="navigateTo('dashboard')">
+                    <span class="nav-icon">📊</span> Dashboard
+                </div>
+                <div class="nav-item" data-page="history" onclick="navigateTo('history')">
+                    <span class="nav-icon">📋</span> Search History
+                </div>
+                <div class="nav-section-title">Insights</div>
+                <div class="nav-item" data-page="formula" onclick="navigateTo('formula')">
+                    <span class="nav-icon">🧮</span> How It Works
+                </div>
+            </div>
+            <div class="sidebar-footer">
+                <div class="sidebar-user" onclick="handleLogout()">
+                    <div class="user-avatar" id="sidebarAvatar">CV</div>
+                    <div class="user-info">
+                        <div class="user-name" id="sidebarName">Chaitanya Vaibhav</div>
+                        <div class="user-role">Admin</div>
+                    </div>
+                    <span style="opacity:0.4;font-size:0.8rem;">↪</span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- ═══ MAIN ═══ -->
+        <div class="main-wrapper">
+            <header class="header">
+                <div class="header-left">
+                    <div>
+                        <h1 class="page-title" id="pageTitle">Search & Compare</h1>
+                        <div class="page-subtitle" id="pageSubtitle">Find the best price across all e-commerce platforms</div>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="engine-status"><div class="status-dot"></div>Engine Live</div>
+                </div>
+            </header>
+
+            <main class="main-content">
+
+                <!-- ══════ 1. SEARCH PAGE ══════ -->
+                <section id="page-search" class="page-section active">
+                    <!-- Search Hero -->
+                    <div class="search-hero">
+                        <h2 class="search-hero-title">🔍 What product are you looking for?</h2>
+                        <p class="search-hero-sub">We'll scan prices across Amazon, Flipkart, Croma, JioMart & more — instantly.</p>
+                        <div class="search-box-wrapper">
+                            <input type="text" id="mainSearch" class="search-box" placeholder="Try 'Samsung Galaxy S24' or 'Air Fryer'..." onkeyup="handleSearchKeyup(event)" autocomplete="off">
+                            <button class="btn btn-primary btn-lg search-btn" onclick="performSearch()">⚡ Compare Prices</button>
+                        </div>
+                        <div class="trending-tags">
+                            <span class="trending-label">🔥 Trending:</span>
+                            <div id="trendingTags"></div>
+                        </div>
+                    </div>
+
+                    <!-- Scraping Animation (hidden by default) -->
+                    <div id="scrapingLoader" class="scraping-loader" style="display:none;">
+                        <div class="scraping-title">⚡ Scanning e-commerce platforms...</div>
+                        <div class="scraping-sites" id="scrapingSites"></div>
+                        <div class="scraping-bar"><div class="scraping-bar-fill" id="scrapingBarFill"></div></div>
+                    </div>
+
+                    <!-- Results (hidden by default) -->
+                    <div id="searchResults" style="display:none;">
+                        <!-- Product Header -->
+                        <div class="result-product-header" id="resultHeader"></div>
+
+                        <!-- Price Summary Cards -->
+                        <div class="price-summary-grid" id="priceSummary"></div>
+
+                        <!-- Best Deal Banner -->
+                        <div id="bestDealBanner"></div>
+
+                        <!-- Site-wise Price Comparison Table -->
+                        <div class="card" style="margin-bottom:1.5rem;">
+                            <div class="card-header">
+                                <h3>🏪 Price Comparison Across All Platforms</h3>
+                            </div>
+                            <div class="card-body" style="padding:0;">
+                                <div class="table-wrapper">
+                                    <table>
+                                        <thead><tr>
+                                            <th>Platform</th><th>Price</th><th>MRP</th><th>Discount</th>
+                                            <th>Rating</th><th>Reviews</th><th>Stock</th><th>Verified</th>
+                                            <th>Delivery</th><th>Smart Score</th>
+                                        </tr></thead>
+                                        <tbody id="comparisonBody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Formula Breakdown -->
+                        <div class="card" style="margin-bottom:1.5rem;">
+                            <div class="card-header">
+                                <h3>🧮 E-Pricing Smart Score — Calculation Breakdown</h3>
+                                <span class="badge badge-info">Algorithm v2.1</span>
+                            </div>
+                            <div class="card-body" id="formulaBreakdown"></div>
+                        </div>
+
+                        <!-- Price Chart -->
+                        <div class="charts-grid">
+                            <div class="chart-card">
+                                <h3>📊 Price Comparison Chart</h3>
+                                <div class="chart-container"><canvas id="chartPriceCompare"></canvas></div>
+                            </div>
+                            <div class="chart-card">
+                                <h3>🏆 Smart Score Breakdown</h3>
+                                <div class="chart-container"><canvas id="chartScoreBreakdown"></canvas></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ══════ 2. DASHBOARD PAGE ══════ -->
+                <section id="page-dashboard" class="page-section">
+                    <div class="stats-grid" id="dashStats"></div>
+                    <div class="charts-grid">
+                        <div class="chart-card"><h3>📦 Products by Category</h3>
+                            <div class="chart-container"><canvas id="chartCategory"></canvas></div>
+                        </div>
+                        <div class="chart-card"><h3>🏪 Average Savings by Platform</h3>
+                            <div class="chart-container"><canvas id="chartSavings"></canvas></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ══════ 3. HISTORY PAGE ══════ -->
+                <section id="page-history" class="page-section">
+                    <div class="page-header">
+                        <div><h2>📋 Search History</h2><p>Your recent product comparisons</p></div>
+                        <button class="btn btn-outline" onclick="clearHistory()">🗑️ Clear All</button>
+                    </div>
+                    <div id="historyList"></div>
+                </section>
+
+                <!-- ══════ 4. HOW IT WORKS PAGE ══════ -->
+                <section id="page-formula" class="page-section">
+                    <div class="page-header"><div><h2>🧮 How E-Pricing Works</h2><p>Understanding our Smart Score algorithm</p></div></div>
+                    <div class="formula-explainer">
+                        <div class="card" style="margin-bottom:1.5rem;">
+                            <div class="card-body">
+                                <h3 style="margin-bottom:1rem;">The E-Pricing Smart Score Formula</h3>
+                                <div class="formula-display">SmartScore = (Price × 0.35) + (Quality × 0.25) + (Stock × 0.20) + (Trust × 0.20)</div>
+                                <div class="formula-steps">
+                                    <div class="formula-step">
+                                        <div class="step-icon" style="background:var(--primary-soft);color:var(--primary);">💰</div>
+                                        <div class="step-content"><h4>Price Score (35% weight)</h4>
+                                            <p>Measures how cheap this listing is compared to others.</p>
+                                            <code>PriceScore = ((MaxPrice − SitePrice) ÷ (MaxPrice − MinPrice)) × 100</code>
+                                            <p class="step-note">The cheapest site gets 100, the most expensive gets 0.</p>
+                                        </div>
+                                    </div>
+                                    <div class="formula-step">
+                                        <div class="step-icon" style="background:var(--accent-soft);color:#B45309;">⭐</div>
+                                        <div class="step-content"><h4>Quality Score (25% weight)</h4>
+                                            <p>Based on user ratings out of 5 stars.</p>
+                                            <code>QualityScore = (Rating ÷ 5) × 100</code>
+                                            <p class="step-note">A 4.5★ rated product scores 90 out of 100.</p>
+                                        </div>
+                                    </div>
+                                    <div class="formula-step">
+                                        <div class="step-icon" style="background:var(--success-soft);color:var(--success);">📦</div>
+                                        <div class="step-content"><h4>Stock Score (20% weight)</h4>
+                                            <p>Checks if the product is currently available to buy.</p>
+                                            <code>StockScore = In Stock ? 100 : 0</code>
+                                            <p class="step-note">Out of stock = 0 points. This heavily penalizes unavailable listings.</p>
+                                        </div>
+                                    </div>
+                                    <div class="formula-step">
+                                        <div class="step-icon" style="background:var(--info-soft);color:var(--info);">🛡️</div>
+                                        <div class="step-content"><h4>Trust Score (20% weight)</h4>
+                                            <p>Combines seller verification and review volume.</p>
+                                            <code>TrustScore = (Verified ? 50 : 0) + min(ReviewCount ÷ 200, 50)</code>
+                                            <p class="step-note">A verified seller with 10,000+ reviews gets full 100 trust points.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-body">
+                                <h3 style="margin-bottom:0.5rem;">🏆 How the Best Deal is Chosen</h3>
+                                <p style="color:var(--text-secondary);line-height:1.8;">The platform with the <strong>highest Smart Score</strong> is recommended as the best deal. This ensures the recommendation isn't just the cheapest option — it considers whether the product is in stock, sold by a trusted seller, and well-rated by real customers. A ₹500 savings means nothing if the seller is unverified or the item is out of stock.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+    <script src="js/data.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

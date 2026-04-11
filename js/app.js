@@ -1,18 +1,13 @@
-// ============================================================
 // E-PRICING — Application Logic (app.js)
-// Smart Price Comparison Engine with dynamic formula scoring
-// ============================================================
+//
 
-// ─── Auth Check ──────────────────────────────────────────────
 var currentUser = JSON.parse(localStorage.getItem('epricing_user'));
 if (!currentUser) window.location.href = 'index.html';
 
-// ─── State ───────────────────────────────────────────────────
 var currentPage = 'search';
 var searchHistory = JSON.parse(localStorage.getItem('epricing_history') || '[]');
 var activeCharts = {};
 
-// ─── Init ────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function() {
     if (currentUser) {
         document.getElementById('sidebarName').textContent = currentUser.name;
@@ -21,9 +16,6 @@ document.addEventListener('DOMContentLoaded', function() {
     renderTrendingTags();
 });
 
-// ═══════════════════════════════════════════════════════════════
-// NAVIGATION
-// ═══════════════════════════════════════════════════════════════
 function navigateTo(page) {
     currentPage = page;
     document.querySelectorAll('.page-section').forEach(function(el) { el.classList.remove('active'); });
@@ -43,9 +35,6 @@ function navigateTo(page) {
     if (page === 'history') renderHistory();
 }
 
-// ═══════════════════════════════════════════════════════════════
-// TRENDING TAGS
-// ═══════════════════════════════════════════════════════════════
 function renderTrendingTags() {
     var container = document.getElementById('trendingTags');
     container.innerHTML = TRENDING_SEARCHES.map(function(t) {
@@ -58,9 +47,6 @@ function quickSearch(term) {
     performSearch();
 }
 
-// ═══════════════════════════════════════════════════════════════
-// SEARCH ENGINE — The Core Feature
-// ═══════════════════════════════════════════════════════════════
 function handleSearchKeyup(event) {
     if (event.key === 'Enter') performSearch();
 }
@@ -69,7 +55,6 @@ function performSearch() {
     var query = document.getElementById('mainSearch').value.trim().toLowerCase();
     if (!query) { showToast('Please enter a product name to search', 'error'); return; }
 
-    // Find matching products (fuzzy match)
     var results = PRODUCT_DATABASE.filter(function(p) {
         var searchStr = (p.name + ' ' + p.brand + ' ' + p.category).toLowerCase();
         return query.split(' ').every(function(word) { return searchStr.includes(word); });
@@ -80,23 +65,17 @@ function performSearch() {
         return;
     }
 
-    // Use the first (best) match
     var product = results[0];
 
-    // Hide search hero, show scraping animation
     document.querySelector('.search-hero').style.display = 'none';
     document.getElementById('searchResults').style.display = 'none';
     startScrapingAnimation(product);
 }
 
-// ═══════════════════════════════════════════════════════════════
-// SCRAPING ANIMATION — Simulates real-time website scanning
-// ═══════════════════════════════════════════════════════════════
 function startScrapingAnimation(product) {
     var loader = document.getElementById('scrapingLoader');
     loader.style.display = 'block';
 
-    // Create site indicators
     var sitesHtml = product.sites.map(function(s) {
         var siteInfo = ECOMMERCE_SITES.find(function(e) { return e.name === s.site; });
         var icon = siteInfo ? siteInfo.icon : '🌐';
@@ -105,18 +84,15 @@ function startScrapingAnimation(product) {
     document.getElementById('scrapingSites').innerHTML = sitesHtml;
     document.getElementById('scrapingBarFill').style.width = '0%';
 
-    // Animate each site being "scraped" sequentially
     var sites = product.sites;
     var delay = 0;
     sites.forEach(function(s, index) {
         var siteId = 'scrape-' + s.site.replace(/\s/g, '');
-        // Start scanning
         setTimeout(function() {
             document.getElementById(siteId).classList.add('scanning');
             document.getElementById('scrapingBarFill').style.width = ((index + 0.5) / sites.length * 100) + '%';
         }, delay);
         delay += 400;
-        // Mark done
         setTimeout(function() {
             document.getElementById(siteId).classList.remove('scanning');
             document.getElementById(siteId).classList.add('done');
@@ -125,39 +101,29 @@ function startScrapingAnimation(product) {
         delay += 200;
     });
 
-    // Show results after all sites "scraped"
     setTimeout(function() {
         loader.style.display = 'none';
         showResults(product);
     }, delay + 300);
 }
 
-// ═══════════════════════════════════════════════════════════════
 // PRICING ENGINE — The Smart Score Formula
-// ═══════════════════════════════════════════════════════════════
-
-// Calculate Smart Score for a single site listing
 function calculateSmartScore(listing, allListings) {
     var prices = allListings.map(function(l) { return l.price; });
     var minPrice = Math.min.apply(null, prices);
     var maxPrice = Math.max.apply(null, prices);
     var priceRange = maxPrice - minPrice;
 
-    // 1. Price Score: cheaper = higher score
     var priceScore = priceRange > 0 ? ((maxPrice - listing.price) / priceRange) * 100 : 50;
 
-    // 2. Quality Score: rating out of 5
     var qualityScore = (listing.rating / 5) * 100;
 
-    // 3. Stock Score: in stock = 100, out of stock = 0
     var stockScore = listing.inStock ? 100 : 0;
 
-    // 4. Trust Score: verified seller + review volume
     var reviewScore = Math.min(listing.reviews / 200, 50);
     var verifiedScore = listing.verified ? 50 : 0;
     var trustScore = verifiedScore + reviewScore;
 
-    // Weighted final score
     var finalScore = (priceScore * FORMULA_WEIGHTS.price) +
                      (qualityScore * FORMULA_WEIGHTS.quality) +
                      (stockScore * FORMULA_WEIGHTS.stock) +
@@ -178,26 +144,17 @@ function calculateSmartScore(listing, allListings) {
     };
 }
 
-// ═══════════════════════════════════════════════════════════════
-// SHOW RESULTS — Render everything after "scraping"
-// ═══════════════════════════════════════════════════════════════
 function showResults(product) {
     var results = document.getElementById('searchResults');
     results.style.display = 'block';
 
-    // Calculate scores for all sites
     var scored = product.sites.map(function(s) {
         var score = calculateSmartScore(s, product.sites);
         return { listing: s, score: score };
     });
-    // Sort by score (highest first)
     scored.sort(function(a, b) { return b.score.total - a.score.total; });
     var bestDeal = scored[0];
 
-    // Save to history
-    addToHistory(product, bestDeal);
-
-    // 1. Product Header
     var prices = product.sites.map(function(s) { return s.price; });
     var minP = Math.min.apply(null, prices);
     var maxP = Math.max.apply(null, prices);
@@ -212,7 +169,6 @@ function showResults(product) {
                 '<span class="meta-chip">🏪 ' + product.sites.length + ' platforms scanned</span>' +
             '</div></div>';
 
-    // 2. Price Summary Cards
     var savings = maxP - minP;
     var avgPrice = Math.round(prices.reduce(function(a, b) { return a + b; }, 0) / prices.length);
     document.getElementById('priceSummary').innerHTML =
@@ -221,7 +177,6 @@ function showResults(product) {
         priceSummaryCard('💰', '₹' + formatNum(savings), 'You Can Save', ((savings / maxP) * 100).toFixed(1) + '% difference') +
         priceSummaryCard('📊', '₹' + formatNum(avgPrice), 'Average Price', 'Across ' + product.sites.length + ' sites');
 
-    // 3. Best Deal Banner
     document.getElementById('bestDealBanner').innerHTML =
         '<div class="best-deal-banner">' +
             '<div class="best-deal-trophy">🏆</div>' +
@@ -237,7 +192,6 @@ function showResults(product) {
             '<div class="best-deal-score"><div class="score-value">' + bestDeal.score.total + '</div><div class="score-label">Smart Score</div></div>' +
         '</div>';
 
-    // 4. Comparison Table
     document.getElementById('comparisonBody').innerHTML = scored.map(function(item, idx) {
         var l = item.listing;
         var s = item.score;
@@ -260,7 +214,6 @@ function showResults(product) {
             '</div></td></tr>';
     }).join('');
 
-    // 5. Formula Breakdown Table
     document.getElementById('formulaBreakdown').innerHTML =
         '<p style="color:var(--text-secondary);margin-bottom:1rem;">Here\'s exactly how we calculated the Smart Score for each platform. Full transparency — no black box!</p>' +
         '<div class="table-wrapper"><table class="formula-table"><thead><tr>' +
@@ -279,10 +232,8 @@ function showResults(product) {
                 '<span class="calc">' + s.priceScore + '×0.35 + ' + s.qualityScore + '×0.25 + ' + s.stockScore + '×0.20 + ' + s.trustScore + '×0.20</span></td></tr>';
         }).join('') + '</tbody></table></div>';
 
-    // 6. Charts
     renderResultCharts(product, scored);
 
-    // Scroll to results
     results.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -293,11 +244,7 @@ function priceSummaryCard(icon, value, label, sub) {
         '<div class="psc-sub">' + sub + '</div></div>';
 }
 
-// ═══════════════════════════════════════════════════════════════
-// CHARTS
-// ═══════════════════════════════════════════════════════════════
 function renderResultCharts(product, scored) {
-    // Destroy old charts
     if (activeCharts.priceCompare) activeCharts.priceCompare.destroy();
     if (activeCharts.scoreBreakdown) activeCharts.scoreBreakdown.destroy();
 
@@ -307,7 +254,6 @@ function renderResultCharts(product, scored) {
         return info ? info.color : '#999';
     });
 
-    // Price Comparison Bar Chart
     activeCharts.priceCompare = new Chart(document.getElementById('chartPriceCompare'), {
         type: 'bar',
         data: {
@@ -321,7 +267,6 @@ function renderResultCharts(product, scored) {
         }
     });
 
-    // Score Breakdown Stacked Bar
     activeCharts.scoreBreakdown = new Chart(document.getElementById('chartScoreBreakdown'), {
         type: 'bar',
         data: {
@@ -340,9 +285,6 @@ function renderResultCharts(product, scored) {
     });
 }
 
-// ═══════════════════════════════════════════════════════════════
-// DASHBOARD
-// ═══════════════════════════════════════════════════════════════
 function renderDashboard() {
     var totalProducts = PRODUCT_DATABASE.length;
     var totalListings = PRODUCT_DATABASE.reduce(function(sum, p) { return sum + p.sites.length; }, 0);
@@ -364,7 +306,6 @@ function renderDashboard() {
         options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { position: 'bottom' } } }
     });
 
-    // Average savings by platform
     var siteSavings = {};
     PRODUCT_DATABASE.forEach(function(p) {
         var prices = p.sites.map(function(s) { return s.price; });
@@ -396,9 +337,6 @@ function statCard(icon, value, label) {
     return '<div class="stat-card"><div class="stat-icon">' + icon + '</div><div class="stat-value">' + value + '</div><div class="stat-label">' + label + '</div></div>';
 }
 
-// ═══════════════════════════════════════════════════════════════
-// SEARCH HISTORY
-// ═══════════════════════════════════════════════════════════════
 function addToHistory(product, bestDeal) {
     searchHistory.unshift({
         name: product.name, icon: product.image, bestSite: bestDeal.listing.site,
@@ -429,9 +367,6 @@ function clearHistory() {
     showToast('History cleared!', 'success');
 }
 
-// ═══════════════════════════════════════════════════════════════
-// UTILITIES
-// ═══════════════════════════════════════════════════════════════
 function formatNum(n) {
     if (!n) return '—';
     var s = n.toString();
